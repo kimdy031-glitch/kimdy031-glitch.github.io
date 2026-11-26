@@ -107,7 +107,7 @@ let resolvedAppCheckInitError: Error | null = null;
 if (typeof window !== 'undefined') {
   try {
     resolvedAppCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+      provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),
       isTokenAutoRefreshEnabled: true,
     });
   } catch (err) {
