@@ -12,8 +12,8 @@ export default defineConfig(({ command }) => {
   return {
     // GitHub Pages 저장소 하위 주소(https://kimdy031-glitch.github.io/velomax-app/) 배포용 base 경로 설정
     // (로컬/AI Studio 개발 서버 실행 시에는 루트 '/'를 유지해 미리보기가 정상 동작하도록 분기합니다)
-    base: command === 'build' ? '/velomax-app/' : '/',
-    plugins: [
+// GitHub Pages 사용자 대표 사이트의 루트 경로 사용
+base: '/',
       react(),
       tailwindcss(),
       // Copies src/assets into dist/ so root-relative URLs like
