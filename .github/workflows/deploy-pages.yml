@@ -68,7 +68,10 @@ jobs:
           VITE_FIREBASE_DATABASE_ID: ${{ vars.VITE_FIREBASE_DATABASE_ID }}
           VITE_RECAPTCHA_V3_SITE_KEY: ${{ vars.VITE_RECAPTCHA_V3_SITE_KEY }}
         run: npm run build
-
+      # GitHub Pages 배포를 위한 .nojekyll 파일 생성
+      - name: GitHub Pages 설정 파일 생성
+        run: touch dist/.nojekyll
+        
       - name: dist 및 MediaPipe 필수 파일 검증
         run: |
           test -f dist/index.html
