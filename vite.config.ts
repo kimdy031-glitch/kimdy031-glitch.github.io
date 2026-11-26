@@ -7,13 +7,13 @@ import {defineConfig} from 'vite';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ command }) => {
+export default defineConfig(() => {
   const disableHmr = process.env.DISABLE_HMR === 'true';
   return {
-    // GitHub Pages 저장소 하위 주소(https://kimdy031-glitch.github.io/velomax-app/) 배포용 base 경로 설정
-    // (로컬/AI Studio 개발 서버 실행 시에는 루트 '/'를 유지해 미리보기가 정상 동작하도록 분기합니다)
-// GitHub Pages 사용자 대표 사이트의 루트 경로 사용
-base: '/',
+    // GitHub Pages 루트 주소(https://kimdy031-glitch.github.io/) 배포용 base 경로 설정
+    // Google AdSense 연동을 위해 하위 경로 없이 루트('/') 기준으로 번들 및 정적 에셋을 서빙합니다.
+    base: '/',
+    plugins: [
       react(),
       tailwindcss(),
       // Copies src/assets into dist/ so root-relative URLs like

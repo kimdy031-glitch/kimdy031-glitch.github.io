@@ -6,48 +6,17 @@
     <title>VELOMAX — 페이지 이동 중</title>
     <script>
       /**
-       * [기능] GitHub Pages 정적 호스팅 404 폴백 리다이렉트
+       * [기능] GitHub Pages 루트 사이트(https://kimdy031-glitch.github.io/) 404 폴백 리다이렉트
        * [원리] VELOMAX는 해시 라우팅(#/dashboard, #/measure 등)을 사용합니다.
-       *        사용자가 실수로 해시(#) 없이 하위 경로(예: /저장소명/measure)로 직접 접속하거나
-       *        새로고침하여 GitHub Pages 404가 발생하면, 저장소 기본 경로와 해시 경로(#/...)로
-       *        자동 변환해 SPA 진입점(index.html)이 정상적으로 열리도록 복구합니다.
+       *        사용자가 해시(#) 없이 직접 하위 경로(예: https://kimdy031-glitch.github.io/measure)에
+       *        접속하거나 새로고침하여 404가 발생하면 루트('/') + 해시 경로('#/measure')로 변환하여
+       *        SPA 진입점(index.html)이 정상적으로 열리도록 복구합니다.
        */
       (function () {
-        var KNOWN_ROUTES = [
-          'auth',
-          'dashboard',
-          'measure',
-          'result',
-          'history',
-          'report',
-          'profile',
-          'about',
-          'references',
-          'terms',
-          'privacy',
-          'contact'
-        ];
         var l = window.location;
-        var segments = l.pathname.split('/').filter(Boolean);
-        var basePath = '/';
-        var routeParts = [];
-
-        if (segments.length > 0) {
-          var first = segments[0].toLowerCase();
-          if (KNOWN_ROUTES.indexOf(first) !== -1) {
-            // 루트 도메인(예: 사용자명.github.io/measure)에서 접근한 경우
-            basePath = '/';
-            routeParts = segments;
-          } else {
-            // 저장소 하위 주소(예: 사용자명.github.io/저장소명/measure)에서 접근한 경우
-            basePath = '/' + segments[0] + '/';
-            routeParts = segments.slice(1);
-          }
-        }
-
-        var cleanRoute = routeParts.join('/').replace(/^\/+/, '');
+        var cleanRoute = l.pathname.replace(/^\/+|\/+$/g, '');
         var targetHash = l.hash || (cleanRoute ? '#/' + cleanRoute : '');
-        l.replace(l.protocol + '//' + l.host + basePath + l.search + targetHash);
+        l.replace(l.protocol + '//' + l.host + '/' + l.search + targetHash);
       })();
     </script>
   </head>
