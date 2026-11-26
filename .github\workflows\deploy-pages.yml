@@ -1,0 +1,98 @@
+# ==============================================================================
+# VELOMAX GitHub Pages 자동 배포 워크플로우 (.github/workflows/deploy-pages.yml)
+# ------------------------------------------------------------------------------
+# 동작 원리:
+#   1) main 브랜치에 코드가 push되거나 GitHub Actions 화면에서 수동 실행(workflow_dispatch)하면 동작합니다.
+#   2) Node.js 22 환경에서 package-lock.json 기준 `npm ci`로 의존성을 설치합니다.
+#   3) TypeScript 검사(npm run lint), Firestore 규칙 검사(npm run lint:rules),
+#      단위 테스트(npm test), Vite 프로덕션 빌드(npm run build -> dist/)를 실행합니다.
+#   4) 빌드된 dist 폴더를 GitHub Pages 공식 액션(configure-pages, upload-pages-artifact,
+#      deploy-pages)을 사용해 https://kimdy031-glitch.github.io/velomax-app/ 에 배포합니다.
+# ==============================================================================
+
+name: Deploy VELOMAX to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# GitHub Pages OIDC 배포에 필요한 최소 권한 설정
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 연속 push 시 진행 중인 배포가 중간에 취소되지 않도록 보호
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build VELOMAX
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 22 설정 (Vite 8 호환 버전)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: 의존성 설치 (npm ci)
+        run: npm ci
+
+      - name: TypeScript 타입 검사
+        run: npm run lint
+
+      - name: Firestore 보안 규칙 검사
+        run: npm run lint:rules
+
+      - name: 핵심 계산 엔진 및 회귀 단위 테스트
+        run: npm test
+
+      - name: Vite 프로덕션 빌드 (base=/velomax-app/)
+        env:
+          # 선택 사항: GitHub 저장소 Variables에 VITE_* 값을 등록한 경우 기본 설정 대신 주입됩니다.
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ vars.VITE_FIREBASE_MEASUREMENT_ID }}
+          VITE_FIREBASE_DATABASE_ID: ${{ vars.VITE_FIREBASE_DATABASE_ID }}
+          VITE_RECAPTCHA_V3_SITE_KEY: ${{ vars.VITE_RECAPTCHA_V3_SITE_KEY }}
+        run: npm run build
+
+      - name: dist 및 MediaPipe 필수 파일 검증
+        run: |
+          test -f dist/index.html
+          test -f dist/404.html
+          test -f dist/.nojekyll
+          test -f dist/mediapipe/wasm/vision_wasm_internal.wasm
+          test -f dist/mediapipe/models/pose_landmarker_lite.task
+
+      - name: GitHub Pages 설정 초기화
+        uses: actions/configure-pages@v5
+
+      - name: dist 빌드 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: GitHub Pages 배포 실행
+        id: deployment
+        uses: actions/deploy-pages@v4
