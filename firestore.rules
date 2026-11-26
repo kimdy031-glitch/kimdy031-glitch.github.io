@@ -1,0 +1,309 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // =========================================================================
+    // [Global Safety Net] 기본 전체 거부 (Default Deny)
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // 전역 보안 검증 헬퍼 함수 (Eight Pillars)
+    // =========================================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string
+        && id.size() >= 1
+        && id.size() <= 128
+        && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidGender(g) {
+      return g in ['male', 'female', 'unspecified'];
+    }
+
+    function isValidExperience(exp) {
+      return exp in [
+        'under3months',
+        '3to6months',
+        '6to12months',
+        '1to3years',
+        'over3years',
+        'under1year'
+      ];
+    }
+
+    function isValidParticipation(p) {
+      return p in ['recreational', 'athlete_training'];
+    }
+
+    function isValidUserGroup(ug) {
+      return ug in ['general', 'athlete'];
+    }
+
+    function isValidExercise(ex) {
+      return ex in ['squat', 'deadlift'];
+    }
+
+    function isValidVelocitySource(vs) {
+      return vs in ['manual', 'mediapipe'];
+    }
+
+    function isValidVelocityOrigin(vo) {
+      return vo in [
+        'velomax_raw',
+        'gymaware_powertool',
+        'moty_v',
+        'ronfic_fitvisor',
+        'imu_sensor',
+        'other',
+        'gymaware',
+        'unknown'
+      ];
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid',
+          'name',
+          'email',
+          'birthDate',
+          'gender',
+          'trainingExperience',
+          'participationType',
+          'userGroup',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'name',
+          'email',
+          'birthDate',
+          'gender',
+          'trainingExperience',
+          'participationType',
+          'userGroup',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.name is string
+        && data.name.size() >= 2
+        && data.name.size() <= 30
+        && data.email is string
+        && data.email.size() >= 5
+        && data.email.size() <= 120
+        && data.birthDate is string
+        && data.birthDate.size() == 10
+        && data.birthDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && isValidGender(data.gender)
+        && isValidExperience(data.trainingExperience)
+        && isValidParticipation(data.participationType)
+        && isValidUserGroup(data.userGroup)
+        && ((data.participationType == 'athlete_training' && data.userGroup == 'athlete')
+          || (data.participationType == 'recreational' && data.userGroup == 'general'))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidLoadVelocityPoint(pt) {
+      return pt is map
+        && pt.keys().hasAll(['loadKg', 'mcvMs'])
+        && pt.keys().hasOnly(['loadKg', 'mcvMs'])
+        && pt.loadKg is number
+        && pt.loadKg > 0
+        && pt.loadKg <= 600
+        && pt.mcvMs is number
+        && pt.mcvMs > 0
+        && pt.mcvMs <= 3.0;
+    }
+
+    function isValidRegression(reg) {
+      return reg is map
+        && reg.keys().hasAll(['slope', 'intercept', 'r2'])
+        && reg.keys().hasOnly(['slope', 'intercept', 'r2'])
+        && reg.slope is number
+        && reg.intercept is number
+        && reg.r2 is number
+        && reg.r2 >= 0
+        && reg.r2 <= 1;
+    }
+
+    function isValidMvt(mvt) {
+      return mvt is map
+        && mvt.keys().hasAll(['valueMs', 'source'])
+        && mvt.keys().hasOnly(['valueMs', 'source'])
+        && mvt.valueMs is number
+        && mvt.valueMs > 0
+        && mvt.valueMs <= 2.0
+        && mvt.source == 'STANDARD_V1';
+    }
+
+    function isValidAttachedVideoNames(names) {
+      return names is list
+        && names.size() <= 5
+        && (names.size() == 0 || (names[0] is string && names[0].size() <= 200))
+        && (names.size() < 2 || (names[1] is string && names[1].size() <= 200))
+        && (names.size() < 3 || (names[2] is string && names[2].size() <= 200))
+        && (names.size() < 4 || (names[3] is string && names[3].size() <= 200))
+        && (names.size() < 5 || (names[4] is string && names[4].size() <= 200));
+    }
+
+    function isValidMeasurementRecord(data, userId, measurementId) {
+      return data.keys().hasAll([
+          'id',
+          'userId',
+          'exercise',
+          'userGroupSnapshot',
+          'measuredAt',
+          'velocitySource',
+          'velocityOrigin',
+          'videoAnalysisPerformed',
+          'attachedVideoNames',
+          'points',
+          'regression',
+          'mvt',
+          'e1rmKg',
+          'isHighExtrapolation',
+          'analysisEngineVersion',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id',
+          'userId',
+          'exercise',
+          'userGroupSnapshot',
+          'measuredAt',
+          'velocitySource',
+          'velocityOrigin',
+          'videoAnalysisPerformed',
+          'attachedVideoNames',
+          'points',
+          'regression',
+          'mvt',
+          'e1rmKg',
+          'isHighExtrapolation',
+          'analysisEngineVersion',
+          'createdAt'
+        ])
+        && isValidId(data.id)
+        && data.id == measurementId
+        && isValidId(data.userId)
+        && data.userId == request.auth.uid
+        && data.userId == userId
+        && isValidExercise(data.exercise)
+        && isValidUserGroup(data.userGroupSnapshot)
+        && data.measuredAt is string
+        && data.measuredAt.size() >= 10
+        && data.measuredAt.size() <= 40
+        && isValidVelocitySource(data.velocitySource)
+        && isValidVelocityOrigin(data.velocityOrigin)
+        && data.videoAnalysisPerformed is bool
+        && isValidAttachedVideoNames(data.attachedVideoNames)
+        && data.points is list
+        && data.points.size() >= 3
+        && data.points.size() <= 5
+        && isValidLoadVelocityPoint(data.points[0])
+        && isValidLoadVelocityPoint(data.points[1])
+        && isValidLoadVelocityPoint(data.points[2])
+        && (data.points.size() < 4 || isValidLoadVelocityPoint(data.points[3]))
+        && (data.points.size() < 5 || isValidLoadVelocityPoint(data.points[4]))
+        && isValidRegression(data.regression)
+        && isValidMvt(data.mvt)
+        && data.e1rmKg is number
+        && data.e1rmKg > 0
+        && data.e1rmKg <= 800
+        && data.isHighExtrapolation is bool
+        && data.analysisEngineVersion is string
+        && data.analysisEngineVersion.size() >= 2
+        && data.analysisEngineVersion.size() <= 32
+        && data.createdAt is timestamp;
+    }
+
+    function hasValidParentUser(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId))
+        && get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+    }
+
+    // =========================================================================
+    // /users/{userId} — PII 격리 및 본인 전용 접근 제어
+    // =========================================================================
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().email == existing().email
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name',
+          'birthDate',
+          'gender',
+          'trainingExperience',
+          'participationType',
+          'userGroup',
+          'updatedAt'
+        ]);
+
+      allow delete: if isValidId(userId) && isOwner(userId);
+
+      // =======================================================================
+      // /users/{userId}/measurements/{measurementId} — 회원 측정 기록 서브컬렉션
+      // =======================================================================
+      match /measurements/{measurementId} {
+        allow get: if isValidId(userId)
+          && isValidId(measurementId)
+          && isOwner(userId)
+          && existing().userId == request.auth.uid;
+
+        allow list: if isValidId(userId)
+          && isOwner(userId)
+          && existing().userId == request.auth.uid;
+
+        allow create: if isValidId(userId)
+          && isValidId(measurementId)
+          && isOwner(userId)
+          && isValidMeasurementRecord(incoming(), userId, measurementId)
+          && incoming().createdAt == request.time
+          && hasValidParentUser(userId);
+
+        allow update: if false;
+
+        allow delete: if isValidId(userId)
+          && isValidId(measurementId)
+          && isOwner(userId)
+          && existing().userId == request.auth.uid;
+      }
+    }
+  }
+}

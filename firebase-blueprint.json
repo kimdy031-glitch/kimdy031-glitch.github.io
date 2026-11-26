@@ -1,0 +1,208 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "VELOMAX 회원 프로필 및 자동 사용자 분류 정보 (만나이는 birthDate 기준 클라이언트에서 동적 계산)",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Authentication 사용자 UID"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30,
+          "description": "사용자 이름 또는 닉네임"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 120,
+          "description": "회원 이메일 주소"
+        },
+        "birthDate": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "생년월일 (YYYY-MM-DD)"
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["male", "female", "unspecified"],
+          "description": "성별 구분"
+        },
+        "trainingExperience": {
+          "type": "string",
+          "enum": [
+            "under3months",
+            "3to6months",
+            "6to12months",
+            "1to3years",
+            "over3years",
+            "under1year"
+          ],
+          "description": "운동 경력"
+        },
+        "participationType": {
+          "type": "string",
+          "enum": ["recreational", "athlete_training"],
+          "description": "운동 참여 형태 (일반인/운동인 자동 분류 기준)"
+        },
+        "userGroup": {
+          "type": "string",
+          "enum": ["general", "athlete"],
+          "description": "분류 결과 (general: 일반인, athlete: 운동인)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "계정 문서 생성 시각 (서버 타임스탬프)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "프로필 최종 수정 시각 (서버 타임스탬프)"
+        }
+      },
+      "required": [
+        "uid",
+        "name",
+        "email",
+        "birthDate",
+        "gender",
+        "trainingExperience",
+        "participationType",
+        "userGroup",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MeasurementRecord": {
+      "title": "MeasurementRecord",
+      "description": "회원의 스쿼트/데드리프트 부하-속도 측정 및 e1RM 분석 결과 레코드",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "측정 기록 고유 ID"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "소유 회원 Firebase UID"
+        },
+        "exercise": {
+          "type": "string",
+          "enum": ["squat", "deadlift"],
+          "description": "운동 종목"
+        },
+        "userGroupSnapshot": {
+          "type": "string",
+          "enum": ["general", "athlete"],
+          "description": "측정 당시 적용된 사용자 구분 스냅샷"
+        },
+        "measuredAt": {
+          "type": "string",
+          "format": "date-time",
+          "minLength": 10,
+          "maxLength": 40,
+          "description": "측정 일시 ISO 문자열"
+        },
+        "velocitySource": {
+          "type": "string",
+          "enum": ["manual", "mediapipe"],
+          "description": "MCV 입력 방식"
+        },
+        "velocityOrigin": {
+          "type": "string",
+          "enum": [
+            "velomax_raw",
+            "gymaware_powertool",
+            "moty_v",
+            "ronfic_fitvisor",
+            "imu_sensor",
+            "other",
+            "gymaware",
+            "unknown"
+          ],
+          "description": "MCV 측정 장비 또는 출처"
+        },
+        "videoAnalysisPerformed": {
+          "type": "boolean",
+          "description": "AI 자세 추정 분석 수행 여부"
+        },
+        "attachedVideoNames": {
+          "type": "array",
+          "description": "참고용 첨부 영상 파일명 목록 (최대 5개, 원본 영상 미저장)"
+        },
+        "points": {
+          "type": "array",
+          "description": "선형회귀에 사용된 3~5개의 (loadKg, mcvMs) 데이터"
+        },
+        "regression": {
+          "type": "object",
+          "description": "최소제곱 선형회귀 결과 { slope, intercept, r2 }"
+        },
+        "mvt": {
+          "type": "object",
+          "description": "적용된 MVT 정보 { valueMs, source }"
+        },
+        "e1rmKg": {
+          "type": "number",
+          "description": "예측 최대근력 (kg)"
+        },
+        "isHighExtrapolation": {
+          "type": "boolean",
+          "description": "고부하 외삽 경고 여부"
+        },
+        "analysisEngineVersion": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32,
+          "description": "분석 엔진 버전"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Firestore 저장 시각 (서버 타임스탬프)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "exercise",
+        "userGroupSnapshot",
+        "measuredAt",
+        "velocitySource",
+        "velocityOrigin",
+        "videoAnalysisPerformed",
+        "attachedVideoNames",
+        "points",
+        "regression",
+        "mvt",
+        "e1rmKg",
+        "isHighExtrapolation",
+        "analysisEngineVersion",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Firebase Auth UID를 문서 ID로 사용하는 회원 개인 프로필 및 PII 격리 문서"
+    },
+    "/users/{userId}/measurements/{measurementId}": {
+      "schema": { "$ref": "#/entities/MeasurementRecord" },
+      "description": "회원별 e1RM 측정 기록 서브컬렉션"
+    }
+  }
+}

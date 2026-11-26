@@ -1,0 +1,8 @@
+{
+  "name": "VELOMAX (벨로맥스)",
+  "description": "부하-속도 선형회귀 모델을 활용한 e1RM 예측 및 트레이닝 중량 분석 웹서비스 (Measure Velocity, Predict Strength.)",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

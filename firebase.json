@@ -1,0 +1,6 @@
+{
+  "firestore": {
+    "database": "ai-studio-velomax-9b403e1c-d620-4f3e-9c70-496a6cef663e",
+    "rules": "firestore.rules"
+  }
+}
