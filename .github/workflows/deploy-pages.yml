@@ -69,6 +69,10 @@ jobs:
           VITE_RECAPTCHA_V3_SITE_KEY: ${{ vars.VITE_RECAPTCHA_V3_SITE_KEY }}
         run: npm run build
 
+      # GitHub Pages에서 Jekyll 처리를 비활성화하기 위한 파일 생성
+      - name: GitHub Pages 필수 설정 파일 생성
+        run: touch dist/.nojekyll
+        
       - name: dist, ads.txt 및 MediaPipe 필수 파일 검증
         run: |
           test -f dist/index.html
