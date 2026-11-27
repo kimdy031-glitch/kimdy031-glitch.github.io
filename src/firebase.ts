@@ -16,7 +16,7 @@ import {
 } from 'firebase/ai';
 import {
   initializeAppCheck,
-  ReCaptchaV3Provider,
+  ReCaptchaEnterpriseProvider,
   type AppCheck,
 } from 'firebase/app-check';
 import { getAuth } from 'firebase/auth';
@@ -62,9 +62,14 @@ const FIRESTORE_DATABASE_ID =
   import.meta.env.VITE_FIREBASE_DATABASE_ID?.trim() ||
   firebaseAppletConfig.firestoreDatabaseId;
 
-const RECAPTCHA_V3_SITE_KEY =
-  import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY?.trim() ||
-  '6Lf-HjMuAAAAAL71cEBW79OpySLDExoOtEgIfDpw';
+/**
+ * [기능] reCAPTCHA Enterprise 사이트 키 설정
+ *
+ * GitHub Actions의 환경변수에서 Enterprise 사이트 키를 가져옵니다.
+ * 실제 Gemini API 비밀키가 아닌 공개용 reCAPTCHA 사이트 키입니다.
+ */
+const RECAPTCHA_ENTERPRISE_SITE_KEY =
+  import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY?.trim() || '';
 
 /**
  * Firebase AI Logic (GoogleAIBackend) 활성 지원 모델명
@@ -106,13 +111,29 @@ let resolvedAppCheckInitError: Error | null = null;
 
 if (typeof window !== 'undefined') {
   try {
+    // Enterprise 사이트 키가 설정되지 않았는지 확인합니다.
+    if (!RECAPTCHA_ENTERPRISE_SITE_KEY) {
+      throw new Error(
+        'reCAPTCHA Enterprise 사이트 키가 설정되지 않았습니다.'
+      );
+    }
+
+    // Firebase App Check 초기화
     resolvedAppCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),
+      provider: new ReCaptchaEnterpriseProvider(
+        RECAPTCHA_ENTERPRISE_SITE_KEY
+      ),
       isTokenAutoRefreshEnabled: true,
     });
+
   } catch (err) {
     resolvedAppCheckInitError =
       err instanceof Error ? err : new Error(String(err));
+
+    console.error(
+      'Firebase App Check 초기화 오류:',
+      resolvedAppCheckInitError
+    );
   }
 }
 
